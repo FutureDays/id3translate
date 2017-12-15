@@ -66,12 +66,12 @@ def process_single_file(file):
     TO DO
     steps:
     walk line by line through each metadata element in the id3OrigObj
-    send to node.js google translate api
-    parse output from node.js google translate api
+    send to googletrans python module/ google translate api
+    parse output from googletrans python module/ google translate api
     write id3TransObj to outputDir
     streamcopy inputFullPath to outputFullPath with id3TransObj
     utils:
-    require node, ffmpeg, unicodedammit? (bs4 python external library)
+    require ffmpeg, googletrans, unicodedammit? (bs4 python external library)
     wishlist:
     id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for thai)
     id3TransObj renamed with translated lagnuage, e.g. -id3-eng.txt (for english)
