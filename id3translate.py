@@ -39,14 +39,12 @@ def check_id3OrigObj(file):
         ffstr = 'ffmpeg -i "' + file.inputFullPath + '" -f ffmetadata -y "' + file.id3OrigObj + '"'
         ffWorked = go(ffstr)
         if ffWorked is not True:
-            print 'id3translate encountered an error exporting ID3 metadata from input file: ' + file.name
-            print 'id3translate is exiting...'
-            return False
+            return None
         time.sleep(1)
         b = os.path.getsize(file.id3OrigObj) #grab the size, in bytes, of the resulting text file
         if b < 55:
             os.remove(file.id3OrigObj)
-            return None
+            return False
         else:
             return True
     else:
@@ -56,7 +54,14 @@ def process_single_file(file):
     '''
     run a single file through the whole process
     '''
-    check_id3OrigObj(file)
+    id3Exists = check_id3OrigObj(file)
+	if id3Exists is None:
+		print 'id3translate encountered an error exporting ID3 metadata from input file: ' + file.name
+		return False
+	if id3Exists is False:
+		print 'id3translate could not locate any ID3 metadata in file: ' + file.name
+		print 'please check to make sure ID3 metadata exists'
+		return False
     '''
     TO DO
     steps:
@@ -118,6 +123,7 @@ def main():
                 processWorked = process_single_file(file)
                 if processWorked is not True:
                     print 'id3translate encountered an error'
+					print 'id3translate is exiting...'
                     sys.exit()
                 foo = raw_input("Press any key to print the next id3-Orig.txt file")
 
