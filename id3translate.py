@@ -57,9 +57,24 @@ def process_single_file(file):
     run a single file through the whole process
     '''
     check_id3OrigObj(file)
+    '''
+    TO DO
+    steps:
+    walk line by line through each metadata element in the id3OrigObj
+    send to node.js google translate api
+    parse output from node.js google translate api
+    write id3TransObj to outputDir
+    streamcopy inputFullPath to outputFullPath with id3TransObj
+    utils:
+    require node, ffmpeg, unicodedammit? (bs4 python external library)
+    wishlist:
+    id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for thai)
+    id3TransObj renamed with translated lagnuage, e.g. -id3-eng.txt (for english)
+    rename files and folders with translations
+    '''
     return True
 
-def parse_input():
+def parse_input(args):
     '''
     returns a dictionary of file attributes/ paths
     '''
@@ -69,7 +84,7 @@ def parse_input():
     file.inputDir = os.path.dirname(file.inputFullPath)
     file.name, file.ext = os.path.splitext(os.path.basename(file.inputFullPath))
     file.outputDir = os.path.abspath(args.o.strip())
-    file.outputFullPath = os.path.join(file.outputDir, file.name + file.ext)
+    file.outputFullPath = os.path.join(file.outputDir, file.name + "-trans" + file.ext)
     file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3-orig.txt')
     file.id3TransObj = os.path.join(file.outputDir, file.name + '-id3-trans.txt')
     return file
@@ -79,23 +94,32 @@ def init_args():
     '''
     initialize arguments from the CLI
     '''
-    global args
     parser = argparse.ArgumentParser(description="translates ID3 metadata embedded in an audio file")
     parser.add_argument('-i', '--input', dest='i', help='the path to the file or folder to be translated')
     parser.add_argument('-o', '--output', dest='o', default=os.getcwd(), help='the output folder path for the translated files')
     args = parser.parse_args()
+    return args
 
 def main():
     '''
     do the thing
     '''
-    init_args()
+    args = init_args()
     if os.path.isfile(args.i):
-        file = parse_input()
+        file = parse_input(args)
         processWorked = process_single_file(file)
         if processWorked is not True:
             print 'id3translate encountered an error'
             sys.exit()
+    elif os.path.isdir(args.i):
+        for dirs, subdirs, files in os.walk(args.i):
+            for f in files:
+                file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
+                processWorked = process_single_file(file)
+                if processWorked is not True:
+                    print 'id3translate encountered an error'
+                    sys.exit()
+                foo = raw_input("eh")
 
 if __name__ == "__main__":
     main()
