@@ -119,7 +119,7 @@ def main():
                 if processWorked is not True:
                     print 'id3translate encountered an error'
                     sys.exit()
-                foo = raw_input("eh")
+                foo = raw_input("Press any key to print the next id3-Orig.txt file")
 
 if __name__ == "__main__":
     main()
