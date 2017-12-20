@@ -12,10 +12,10 @@ nltk also requires the averaged_perceptron_tagger. to download:
 
 In Terminal/ cmd.exe
 
-python
+`python
 
 >>> import nltk
 
 >>> nltk.download('averaged_perceptron_tagger')
 
->>> exit()
+>>> exit()`
