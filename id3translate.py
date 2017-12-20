@@ -63,13 +63,13 @@ def id3file_to_dict(file):
 		tagsOrig[tag] = value
 	return tagsOrig
 
-def translate_tags(tagsOrig):
+def translate_tags(tagsOrig, args):
 	'''
 	sends tags to google translate
 	'''
 	tagsTrans = ({})
 	for tag, value in tagsOrig.iteritems():
-		tagsTrans[tag] = translate(value)
+			tagsTrans[tag] = translate(value, args.d)
 	return tagsTrans
 
 def write_translated_id3file(file, tagsTrans):
@@ -82,7 +82,7 @@ def write_translated_id3file(file, tagsTrans):
 		id3file.write(key + "=" + value.encode('utf-8') + "\n")
 	id3file.close()
 
-def process_single_file(file):
+def process_single_file(args, file):
 	'''
 	run a single file through the whole process
 	'''
@@ -96,7 +96,7 @@ def process_single_file(file):
 		return False
 	tagsOrig = id3file_to_dict(file)
 	print tagsOrig
-	tagsTrans = translate_tags(tagsOrig)
+	tagsTrans = translate_tags(tagsOrig, args)
 	print tagsTrans
 	write_translated_id3file(file, tagsTrans)
 	'''
@@ -133,14 +133,16 @@ def parse_input(args):
 
 
 def init_args():
-    '''
-    initialize arguments from the CLI
-    '''
-    parser = argparse.ArgumentParser(description="translates ID3 metadata embedded in an audio file")
-    parser.add_argument('-i', '--input', dest='i', help='the path to the file or folder to be translated')
-    parser.add_argument('-o', '--output', dest='o', default=None, help='the output folder path for the translated files')
-    args = parser.parse_args()
-    return args
+	'''
+	initialize arguments from the CLI
+	'''
+	parser = argparse.ArgumentParser(description="translates ID3 metadata embedded in an audio file")
+	parser.add_argument('-i', '--input', dest='i', help='the path to the file or folder to be translated')
+	parser.add_argument('-o', '--output', dest='o', default=None, help='the output folder path for the translated files')
+	parser.add_argument('-srce', '--source-language', dest='s', default=None, help='the source language (ISO 639-1), if unspecified id3translate will guess')
+	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help='the destination language (ISO 639-1), default is English (en)')
+	args = parser.parse_args()
+	return args
 
 def main():
     '''
@@ -149,7 +151,7 @@ def main():
     args = init_args()
     if os.path.isfile(args.i):
         file = parse_input(args)
-        processWorked = process_single_file(file)
+        processWorked = process_single_file(args, file)
         if processWorked is not True:
             print 'id3translate encountered an error'
             sys.exit()
@@ -157,7 +159,7 @@ def main():
         for dirs, subdirs, files in os.walk(args.i):
             for f in files:
                 file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
-                processWorked = process_single_file(file)
+                processWorked = process_single_file(args, file)
                 if processWorked is not True:
 					print 'id3translate encountered an error'
 					print 'id3translate is exiting...'
