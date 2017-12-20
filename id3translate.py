@@ -6,9 +6,11 @@ import io
 import os
 import sys
 import time
+import types
 import argparse
 import subprocess
 from mtranslate import translate
+from nltk.tag import pos_tag
 
 class dotdict(dict):
 	'''
@@ -63,13 +65,20 @@ def id3file_to_dict(file):
 		tagsOrig[tag] = value
 	return tagsOrig
 
-def translate_tags(tagsOrig, args):
+def translate_tags(args, tagsOrig):
 	'''
 	sends tags to google translate
 	'''
 	tagsTrans = ({})
 	for tag, value in tagsOrig.iteritems():
-			tagsTrans[tag] = translate(value, args.d)
+		if isinstance(value, types.StringTypes):
+			tagsTrans[tag] = translate(value, args.d, args.s)
+		else:
+			values = []
+			for v in value:
+				val = translate(v, args.d, args.s)
+				values.append(val)
+			tagsTrans[tag] = values
 	return tagsTrans
 
 def write_translated_id3file(file, tagsTrans):
@@ -81,6 +90,36 @@ def write_translated_id3file(file, tagsTrans):
 	for key, value in tagsTrans.iteritems():
 		id3file.write(key + "=" + value.encode('utf-8') + "\n")
 	id3file.close()
+
+def separate_properNouns(tags):
+	'''
+	separates proper nouns from the tag value strings
+	'''
+	properNouns = dotdict({})
+	pnIndicies = {}
+	for tag, value in tags.iteritems():
+		tagged_content = pos_tag(value.split())
+		properNouns[tag] = [word for word, pos in tagged_content if pos == 'NNP']
+	return properNouns
+
+def replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans):
+	'''
+	replaces translated proper nouns with original proper nouns
+	'''
+	tagsTransPNreplaced = dotdict({})
+	for tag, value in tagsTrans.iteritems():
+		tagsTransPNreplaced[tag] = value
+		if properNounsOrig[tag]:
+			for pno in properNounsOrig[tag]:
+				print pno
+				print properNounsOrig[tag].index(pno)
+				indx = properNounsOrig[tag].index(pno)
+				pnt = properNounsTrans[tag][indx]
+				print pnt + " -> " + pno
+				something = tagsTransPNreplaced[tag].replace(pnt, pno)
+				print something.encode('utf-8')
+				tagsTransPNreplaced[tag] = something
+	return tagsTransPNreplaced
 
 def process_single_file(args, file):
 	'''
@@ -96,19 +135,25 @@ def process_single_file(args, file):
 		return False
 	tagsOrig = id3file_to_dict(file)
 	print tagsOrig
-	tagsTrans = translate_tags(tagsOrig, args)
+	tagsTrans = translate_tags(args, tagsOrig)
 	print tagsTrans
+	if args.names is True:
+		properNounsOrig = separate_properNouns(tagsOrig)
+		properNounsTrans = translate_tags(args, properNounsOrig)
+		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
+	print tagsTrans
+	foo = raw_input("eh")
 	write_translated_id3file(file, tagsTrans)
+
 	'''
     TO DO
     steps:
-    write id3TransObj to outputDir
     streamcopy inputFullPath to outputFullPath with id3TransObj
     utils:
     require ffmpeg, googletrans, unicodedammit? (bs4 python external library)
     wishlist:
     id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for thai)
-    id3TransObj renamed with translated lagnuage, e.g. -id3-eng.txt (for english)
+    id3TransObj renamed with translated lagnuage, e.g. -id3-en.txt (for english)
     rename files and folders with translations
     '''
 	return True
@@ -141,6 +186,7 @@ def init_args():
 	parser.add_argument('-o', '--output', dest='o', default=None, help='the output folder path for the translated files')
 	parser.add_argument('-srce', '--source-language', dest='s', default=None, help='the source language (ISO 639-1), if unspecified id3translate will guess')
 	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help='the destination language (ISO 639-1), default is English (en)')
+	parser.add_argument('--ignore-names', dest='names', action='store_true', default=False, help="don't translate words identified as proper nouns")
 	args = parser.parse_args()
 	return args
 
