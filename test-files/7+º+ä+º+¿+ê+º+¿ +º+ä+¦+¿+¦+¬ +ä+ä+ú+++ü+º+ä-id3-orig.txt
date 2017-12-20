@@ -1,0 +1,8 @@
+;FFMETADATA1
+album=Lovely Animal Music Disk Collection Vol Ⅰ
+artist=<???>
+track=7
+comment= 
+title=الابواب السبعة للأطفال
+date=2017
+encoder=Lavf57.46.100

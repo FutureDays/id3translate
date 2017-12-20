@@ -111,15 +111,18 @@ def replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans):
 		tagsTransPNreplaced[tag] = value
 		if properNounsOrig[tag]:
 			for pno in properNounsOrig[tag]:
-				print pno
-				print properNounsOrig[tag].index(pno)
 				indx = properNounsOrig[tag].index(pno)
 				pnt = properNounsTrans[tag][indx]
-				print pnt + " -> " + pno
 				something = tagsTransPNreplaced[tag].replace(pnt, pno)
-				print something.encode('utf-8')
 				tagsTransPNreplaced[tag] = something
 	return tagsTransPNreplaced
+
+def make_trans_id3str(file):
+	'''
+	makes a string to write the new file
+	'''
+	ffstr = 'ffmpeg -i "' + file.id3TransObj + '" -i "' + file.inputFullPath + '" -c copy -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	return ffstr
 
 def process_single_file(args, file):
 	'''
@@ -142,9 +145,15 @@ def process_single_file(args, file):
 		properNounsTrans = translate_tags(args, properNounsOrig)
 		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
 	print tagsTrans
-	foo = raw_input("eh")
 	write_translated_id3file(file, tagsTrans)
-
+	ffstr = make_trans_id3str(file)
+	print ffstr
+	ffworked = go(ffstr)
+	if ffworked is not True:
+		print ffworked
+		return False
+	else:
+		return True
 	'''
     TO DO
     steps:

@@ -1,0 +1,11 @@
+;FFMETADATA1
+album=ဘရဏီ
+album_artist=Myanmar Pyi Thein Tan
+comment=0
+encoded_by=iTunes 10.2.1.1
+genre=Other
+track=9/13
+artist=ျမန္မာျပည္သိန္းတန္
+title=ေငြစင္ေရာ္
+date=1994
+encoder=Lavf57.46.100

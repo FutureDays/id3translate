@@ -1,0 +1,8 @@
+;FFMETADATA1album=Night From The Galaxy Railway
+title=???????
+track=11/20
+artist=????
+encoder=Lavf57.46.100
+genre=Soundtrack
+date=1985
+album_artist=Haruomi Hosono

@@ -1,0 +1,7 @@
+;FFMETADATA1album=Lovely Animal Music Disk Collection Vol Ⅰ
+comment=
+artist=<???>
+track=7
+title=The seven doors of the children
+encoder=Lavf57.46.100
+date=2017
