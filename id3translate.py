@@ -30,9 +30,9 @@ def go(ffstr):
 		else:
 			returncode = subprocess.check_output(ffstr)
 		return True
-	except subprocess.CalledProcessError, e:
+	except subprocess.CalledProcessError as e:
 		returncode = e.returncode
-        print returncode
+        print(returncode)
         return returncode
 
 def check_id3OrigObj(file):
@@ -70,8 +70,8 @@ def translate_tags(args, tagsOrig):
 	sends tags to google translate
 	'''
 	tagsTrans = ({})
-	for tag, value in tagsOrig.iteritems():
-		if isinstance(value, types.StringTypes):
+	for tag, value in tagsOrig.items():
+		if isinstance(value, (str,)):
 			tagsTrans[tag] = translate(value, args.d, args.s)
 		else:
 			values = []
@@ -87,7 +87,7 @@ def write_translated_id3file(file, tagsTrans):
 	'''
 	id3file = open(file.id3TransObj,'a')
 	id3file.write(";FFMETADATA1")
-	for key, value in tagsTrans.iteritems():
+	for key, value in tagsTrans.items():
 		id3file.write(key + "=" + value.encode('utf-8') + "\n")
 	id3file.close()
 
@@ -97,7 +97,7 @@ def separate_properNouns(tags):
 	'''
 	properNouns = dotdict({})
 	pnIndicies = {}
-	for tag, value in tags.iteritems():
+	for tag, value in tags.items():
 		tagged_content = pos_tag(value.split())
 		properNouns[tag] = [word for word, pos in tagged_content if pos == 'NNP']
 	return properNouns
@@ -107,7 +107,7 @@ def replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans):
 	replaces translated proper nouns with original proper nouns
 	'''
 	tagsTransPNreplaced = dotdict({})
-	for tag, value in tagsTrans.iteritems():
+	for tag, value in tagsTrans.items():
 		tagsTransPNreplaced[tag] = value
 		if properNounsOrig[tag]:
 			for pno in properNounsOrig[tag]:
@@ -130,27 +130,27 @@ def process_single_file(args, file):
 	'''
 	id3Exists = check_id3OrigObj(file)
 	if id3Exists is None:
-		print 'id3translate encountered an error exporting ID3 metadata from input file: ' + file.name
+		print('id3translate encountered an error exporting ID3 metadata from input file: ' + file.name)
 		return False
 	if id3Exists is False:
-		print 'id3translate could not locate any ID3 metadata in file: ' + file.name
-		print 'please check to make sure ID3 metadata exists'
+		print('id3translate could not locate any ID3 metadata in file: ' + file.name)
+		print('please check to make sure ID3 metadata exists')
 		return False
 	tagsOrig = id3file_to_dict(file)
-	print tagsOrig
+	print(tagsOrig)
 	tagsTrans = translate_tags(args, tagsOrig)
-	print tagsTrans
+	print(tagsTrans)
 	if args.names is True:
 		properNounsOrig = separate_properNouns(tagsOrig)
 		properNounsTrans = translate_tags(args, properNounsOrig)
 		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
-	print tagsTrans
+	print(tagsTrans)
 	write_translated_id3file(file, tagsTrans)
 	ffstr = make_trans_id3str(file)
-	print ffstr
+	print(ffstr)
 	ffworked = go(ffstr)
 	if ffworked is not True:
-		print ffworked
+		print(ffworked)
 		return False
 	else:
 		return True
@@ -208,7 +208,7 @@ def main():
         file = parse_input(args)
         processWorked = process_single_file(args, file)
         if processWorked is not True:
-            print 'id3translate encountered an error'
+            print('id3translate encountered an error')
             sys.exit()
     elif os.path.isdir(args.i):
         for dirs, subdirs, files in os.walk(args.i):
@@ -216,10 +216,10 @@ def main():
                 file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
                 processWorked = process_single_file(args, file)
                 if processWorked is not True:
-					print 'id3translate encountered an error'
-					print 'id3translate is exiting...'
+					print('id3translate encountered an error')
+					print('id3translate is exiting...')
 					sys.exit()
-                foo = raw_input("Press any key to print the next id3-Orig.txt file")
+                foo = input("Press any key to print the next id3-Orig.txt file")
 
 if __name__ == "__main__":
     main()
