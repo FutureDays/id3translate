@@ -1,6 +1,19 @@
+#!/usr/bin/env python
 '''
 id3translate
 translate id3 tags in your audio files
+
+TO DO
+utils:
+require ffmpeg
+wishlist:
+id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for thai)
+id3TransObj renamed with translated lagnuage, e.g. -id3-en.txt (for english)
+rename files and folders with translations
+overwrite option
+option to not print ffmetadata1 txt files
+option for quiet mode
+cleanup()
 '''
 import io
 import os
@@ -9,8 +22,8 @@ import time
 import types
 import argparse
 import subprocess
-from mtranslate import translate
 from nltk.tag import pos_tag
+from mtranslate import translate
 
 class dotdict(dict):
 	'''
@@ -137,35 +150,19 @@ def process_single_file(args, file):
 		print 'please check to make sure ID3 metadata exists'
 		return False
 	tagsOrig = id3file_to_dict(file)
-	print tagsOrig
 	tagsTrans = translate_tags(args, tagsOrig)
-	print tagsTrans
 	if args.names is True:
 		properNounsOrig = separate_properNouns(tagsOrig)
 		properNounsTrans = translate_tags(args, properNounsOrig)
 		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
-	print tagsTrans
 	write_translated_id3file(file, tagsTrans)
 	ffstr = make_trans_id3str(file)
-	print ffstr
 	ffworked = go(ffstr)
 	if ffworked is not True:
 		print ffworked
 		return False
 	else:
 		return True
-	'''
-    TO DO
-    steps:
-    streamcopy inputFullPath to outputFullPath with id3TransObj
-    utils:
-    require ffmpeg, googletrans, unicodedammit? (bs4 python external library)
-    wishlist:
-    id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for thai)
-    id3TransObj renamed with translated lagnuage, e.g. -id3-en.txt (for english)
-    rename files and folders with translations
-    '''
-	return True
 
 def parse_input(args):
 	'''
@@ -180,46 +177,48 @@ def parse_input(args):
 		file.outputDir = file.inputDir
 	else:
 		file.outputDir = os.path.abspath(args.o.strip())
+		if not os.path.exists(file.outputDir):
+			os.makedirs(file.outputDir)
 	file.outputFullPath = os.path.join(file.outputDir, file.name + "-trans" + file.ext)
 	file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3-orig.txt')
 	file.id3TransObj = os.path.join(file.outputDir, file.name + '-id3-trans.txt')
 	return file
-
 
 def init_args():
 	'''
 	initialize arguments from the CLI
 	'''
 	parser = argparse.ArgumentParser(description="translates ID3 metadata embedded in an audio file")
-	parser.add_argument('-i', '--input', dest='i', help='the path to the file or folder to be translated')
-	parser.add_argument('-o', '--output', dest='o', default=None, help='the output folder path for the translated files')
-	parser.add_argument('-srce', '--source-language', dest='s', default=None, help='the source language (ISO 639-1), if unspecified id3translate will guess')
-	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help='the destination language (ISO 639-1), default is English (en)')
+	parser.add_argument('-i', '--input', dest='i', help="the path to the file or folder to be translated")
+	parser.add_argument('-o', '--output', dest='o', default=None, help="the output folder path for the translated files")
+	parser.add_argument('-srce', '--source-language', dest='s', default=None, help="the source language (ISO 639-1), if unspecified id3translate will guess")
+	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help="the destination language (ISO 639-1), default is English (en)")
 	parser.add_argument('--ignore-names', dest='names', action='store_true', default=False, help="don't translate words identified as proper nouns")
 	args = parser.parse_args()
 	return args
 
 def main():
-    '''
-    do the thing
-    '''
-    args = init_args()
-    if os.path.isfile(args.i):
-        file = parse_input(args)
-        processWorked = process_single_file(args, file)
-        if processWorked is not True:
-            print 'id3translate encountered an error'
-            sys.exit()
-    elif os.path.isdir(args.i):
-        for dirs, subdirs, files in os.walk(args.i):
-            for f in files:
-                file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
-                processWorked = process_single_file(args, file)
-                if processWorked is not True:
+	'''
+	do the thing
+	'''
+	args = init_args()
+	if os.path.isfile(args.i):
+		file = parse_input(args)
+		processWorked = process_single_file(args, file)
+		if processWorked is not True:
+			print 'id3translate encountered an error'
+			print 'id3translate is exiting...'
+			sys.exit()
+	elif os.path.isdir(args.i):
+		for dirs, subdirs, files in os.walk(args.i):
+			for f in files:
+				file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
+				processWorked = process_single_file(args, file)
+				if processWorked is not True:
 					print 'id3translate encountered an error'
 					print 'id3translate is exiting...'
 					sys.exit()
-                foo = raw_input("Press any key to print the next id3-Orig.txt file")
+				foo = raw_input("Press any key to process the next file file")
 
 if __name__ == "__main__":
     main()
