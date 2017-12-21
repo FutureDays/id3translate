@@ -27,7 +27,7 @@ requires:
 
 #### [python](https://www.python.org/downloads/)
 
-(has an installer)
+(has an installer. default branch is python2)
 
 ### Python libs
 
@@ -46,4 +46,5 @@ In Terminal/ cmd.exe
 python
 >>> import nltk
 >>> nltk.download('averaged_perceptron_tagger')
->>> exit()```
+>>> exit()
+```
