@@ -155,8 +155,6 @@ def output_duplicate_check(file):
 		file.outputFullPath = os.path.join(file.outputDir, strcount + fbasename)
 		file.id3TransObj = os.path.join(file.outputDir, strcount + id3basename)
 		count = count + 1
-		print file.outputFullPath
-		foo = raw_input("eh")
 	return file
 
 def write_translated_id3file(file, tagsTrans):
