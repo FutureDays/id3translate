@@ -125,9 +125,10 @@ def make_trans_id3str(file, tagsTrans):
 	mtdstr = ''
 	for tag, value in tagsTrans.iteritems():
 		mtdstr = mtdstr + ' -metadata ' + tag + '="' + value + '"'
-	ffstr = 'ffmpeg -i "' + file.inputFullPath.decode('utf-8') + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	ffstr = 'ffmpeg -i "' + file.inputFullPath.decode('utf8') + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath.decode("utf8") + '"'
 	#ffstr = 'ffmpeg -i "foobar.mp3" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
 	#ffstr = 'ffmpeg -i "' + file.inputFullPath + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "foobar.mp3"'
+	#ffstr = 'ffmpeg -i "foobar.mp3" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "foobar.mp3"'
 	return ffstr
 
 def rename(file, tagsTrans):
@@ -225,9 +226,6 @@ def parse_input(args):
 		file.outputFullPath = os.path.join(file.outputDir, f.name + file.ext)
 		file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3.txt')
 		file.id3TransObj = os.path.join(file.outputDir, f.name + '-id3.txt')
-	print args.fnames is False
-	print args
-	print file.outputFullPath == file.inputFullPath
 	if args.fnames is None or args.fnames == 'rename' or file.outputFullPath == file.inputFullPath:
 		file.outputFullPath = os.path.join(file.outputDir, file.name + "-trans" + file.ext)
 		file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3-orig.txt')
@@ -258,6 +256,10 @@ def main():
 	args = init_args()
 	if os.path.isfile(args.i):
 		file = parse_input(args)
+		'''print file.inputFullPath
+		print file.inputFullPath.decode('UTF-8')
+		print file.inputFullPath.encode('utf-8')
+		foo = raw_input("eh")'''
 		processWorked = process_single_file(args, file)
 		if processWorked is not True:
 			print 'id3translate encountered an error'
@@ -273,7 +275,7 @@ def main():
 						print 'id3translate encountered an error'
 						print 'id3translate is exiting...'
 						sys.exit()
-					foo = raw_input("Press any key to process the next file file")
+					foo = raw_input("Press any key to process the next file")
 	else:
 		print "id3translate could not locate the file or folder specified"
 		print "or, the file is of an unknown type"
