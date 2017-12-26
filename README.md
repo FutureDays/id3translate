@@ -21,7 +21,12 @@ Type `python id3translate.py -h` for help
 
 -dest --destination-language | optional, the destination language of the tags that you want to translate. if not specified, id3translate/ google translate will translate into English
 
+-p --print | optional, print sidecar ;FFMETADATA1 text files. Default is off. id3translate will automatically create ;FFMETADATA1
+files for each input, but will delete them after the tags have been translated
+
 --ignore-names | optional, id3translate will use nltk's Part Of Speech tagger to guess at proper nouns and omit them in the translation. default will translate the proper nouns
+
+--filenames-mode | optional, choose between: translate, which translates the input filename; rename, which renames the input filename with the Title tag; or None, which appends "-trans" to the input filename
 
 ## Installation
 
