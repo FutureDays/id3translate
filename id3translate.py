@@ -11,9 +11,7 @@ id3OrigObj renamed with original/ API detected language, e.g. -id3-th.txt (for t
 id3TransObj renamed with translated lagnuage, e.g. -id3-en.txt (for english)
 rename files and folders with translations
 overwrite option
-option to not print ffmetadata1 txt files
 option for quiet mode
-cleanup()
 '''
 import io
 import os
@@ -82,7 +80,7 @@ def translate_tags(args, tagsOrig):
 	'''
 	sends tags to google translate
 	'''
-	tagsTrans = ({})
+	tagsTrans = dotdict({})
 	for tag, value in tagsOrig.iteritems():
 		if isinstance(value, types.StringTypes):
 			tagsTrans[tag] = translate(value, args.d, args.s)
@@ -93,16 +91,6 @@ def translate_tags(args, tagsOrig):
 				values.append(val)
 			tagsTrans[tag] = values
 	return tagsTrans
-
-def write_translated_id3file(file, tagsTrans):
-	'''
-	writes the translated tags to an ;FFMETADATA1 file
-	'''
-	id3file = open(file.id3TransObj,'a')
-	id3file.write(";FFMETADATA1")
-	for key, value in tagsTrans.iteritems():
-		id3file.write(key + "=" + value.encode('utf-8') + "\n")
-	id3file.close()
 
 def separate_properNouns(tags):
 	'''
@@ -137,8 +125,58 @@ def make_trans_id3str(file, tagsTrans):
 	mtdstr = ''
 	for tag, value in tagsTrans.iteritems():
 		mtdstr = mtdstr + ' -metadata ' + tag + '="' + value + '"'
-	ffstr = 'ffmpeg -i "' + file.inputFullPath + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	ffstr = 'ffmpeg -i "' + file.inputFullPath.decode('utf-8') + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	#ffstr = 'ffmpeg -i "foobar.mp3" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	#ffstr = 'ffmpeg -i "' + file.inputFullPath + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "foobar.mp3"'
 	return ffstr
+
+def rename(file, tagsTrans):
+	'''
+	renaming logic for the file, based on translating from title tag
+	'''
+	if tagsTrans.title:
+		file.outputFullPath = os.path.join(file.outputDir, tagsTrans.title + file.ext)
+		file.id3TransObj = os.path.join(file.outputDir, tagsTrans.title + file.ext)
+		file = output_duplicate_check(file)
+	return file
+
+def output_duplicate_check(file):
+	'''
+	checks if there's a duplicate filepath present in destination, prefixes 01- to file.name
+	'''
+	count = 1
+	fbasename = os.path.basename(file.outputFullPath)
+	id3basename = os.path.basename(file.id3TransObj)
+	while os.path.exists(file.outputFullPath) or os.path.exists(file.id3TransObj):
+		if count < 10:
+			strcount = "0" + str(count) + "-"
+		else:
+			strcount = str(count) + "-"
+		file.outputFullPath = os.path.join(file.outputDir, strcount + fbasename)
+		file.id3TransObj = os.path.join(file.outputDir, strcount + id3basename)
+		count = count + 1
+		print file.outputFullPath
+		foo = raw_input("eh")
+	return file
+
+def write_translated_id3file(file, tagsTrans):
+	'''
+	writes the translated tags to an ;FFMETADATA1 file
+	'''
+	id3file = open(file.id3TransObj,'a')
+	id3file.write(";FFMETADATA1")
+	for key, value in tagsTrans.iteritems():
+		id3file.write(key + "=" + value + "\n")
+	id3file.close()
+
+def cleanup(args, file, tagsTrans):
+	'''
+	handles printing/ deleting/ renaming things
+	'''
+	if args.p:
+		write_translated_id3file(file, tagsTrans)
+	else:
+		os.remove(file.id3OrigObj)
 
 def process_single_file(args, file):
 	'''
@@ -158,6 +196,8 @@ def process_single_file(args, file):
 		properNounsOrig = separate_properNouns(tagsOrig)
 		properNounsTrans = translate_tags(args, properNounsOrig)
 		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
+	if args.fnames == 'rename':
+		file = rename(file, tagsTrans)
 	ffstr = make_trans_id3str(file, tagsTrans)
 	ffworked = go(ffstr)
 	if ffworked is not True:
@@ -166,15 +206,6 @@ def process_single_file(args, file):
 	else:
 		cleanup(args, file, tagsTrans)
 		return True
-
-def cleanup(args, file, tagsTrans):
-	'''
-	handles printing/ deleting/ renaming things
-	'''
-	if args.p:
-		write_translated_id3file(file, tagsTrans)
-	else:
-		os.remove(file.id3OrigObj)
 
 def parse_input(args):
 	'''
@@ -191,9 +222,19 @@ def parse_input(args):
 		file.outputDir = os.path.abspath(args.o.strip())
 		if not os.path.exists(file.outputDir):
 			os.makedirs(file.outputDir)
-	file.outputFullPath = os.path.join(file.outputDir, file.name + "-trans" + file.ext)
-	file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3-orig.txt')
-	file.id3TransObj = os.path.join(file.outputDir, file.name + '-id3-trans.txt')
+	if args.fnames == 'translate':
+		f = translate_tags(args, dotdict({'name':file.name}))
+		file.outputFullPath = os.path.join(file.outputDir, f.name + file.ext)
+		file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3.txt')
+		file.id3TransObj = os.path.join(file.outputDir, f.name + '-id3.txt')
+	print args.fnames is False
+	print args
+	print file.outputFullPath == file.inputFullPath
+	if args.fnames is None or args.fnames == 'rename' or file.outputFullPath == file.inputFullPath:
+		file.outputFullPath = os.path.join(file.outputDir, file.name + "-trans" + file.ext)
+		file.id3OrigObj = os.path.join(file.inputDir, file.name + '-id3-orig.txt')
+		file.id3TransObj = os.path.join(file.outputDir, file.name + '-id3-trans.txt')
+	file = output_duplicate_check(file)
 	return file
 
 def init_args():
@@ -205,8 +246,10 @@ def init_args():
 	parser.add_argument('-o', '--output', dest='o', default=None, help="the output folder path for the translated files")
 	parser.add_argument('-srce', '--source-language', dest='s', default=None, help="the source language (ISO 639-1), if unspecified id3translate will guess")
 	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help="the destination language (ISO 639-1), default is English (en)")
-	parser.add_argument('-p', '--print', dest='p', action='store_true', default=False, help="print sidecar ;FFMETADATA1 text files, defualt is False")
-	parser.add_argument('--ignore-names', dest='names', action='store_true', default=False, help="don't translate words identified as proper nouns")
+	parser.add_argument('-p', '--print', dest='p', action='store_true', default=False, help="print sidecar ;FFMETADATA1 text files, default is False")
+	#parser.add_argument('--translate-filenames', dest='fnames', action='store_true', default=False, help="don't translate filenames, default will translate")
+	parser.add_argument('--ignore-names', dest='names', action='store_true', default=False, help="don't translate words identified as proper nouns, default will translate")
+	parser.add_argument('--filenames-mode', dest='fnames', choices=['translate','rename', None], const=None, nargs='?', help="filenames mode, translate will translate the input directly, rename will rename output file with translated Title tag. default leaves original names")
 	args = parser.parse_args()
 	return args
 
@@ -225,13 +268,21 @@ def main():
 	elif os.path.isdir(args.i):
 		for dirs, subdirs, files in os.walk(args.i):
 			for f in files:
-				file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
-				processWorked = process_single_file(args, file)
-				if processWorked is not True:
-					print 'id3translate encountered an error'
-					print 'id3translate is exiting...'
-					sys.exit()
-				foo = raw_input("Press any key to process the next file file")
+				if not f.startswith ('.'):
+					file = parse_input(dotdict({"i":os.path.join(dirs, f), "o":args.o}))
+					processWorked = process_single_file(args, file)
+					if processWorked is not True:
+						print 'id3translate encountered an error'
+						print 'id3translate is exiting...'
+						sys.exit()
+					foo = raw_input("Press any key to process the next file file")
+	else:
+		print "id3translate could not locate the file or folder specified"
+		print "or, the file is of an unknown type"
+		print "please check the file/ folder path and try again"
+		print 'id3translate encountered an error'
+		print 'id3translate is exiting...'
+		sys.exit()
 
 if __name__ == "__main__":
     main()
