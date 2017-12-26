@@ -1,5 +1,0 @@
-;FFMETADATA1
-title=ខ្លួន​តូច​ទេ​ ប៉ុន្តែ​មាន​សមត្ថភាព
-comment=converted by convert2mp3.net
-artist=???
-encoder=Lavf57.46.100

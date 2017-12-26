@@ -130,11 +130,14 @@ def replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans):
 				tagsTransPNreplaced[tag] = something
 	return tagsTransPNreplaced
 
-def make_trans_id3str(file):
+def make_trans_id3str(file, tagsTrans):
 	'''
 	makes a string to write the new file
 	'''
-	ffstr = 'ffmpeg -i "' + file.id3TransObj + '" -i "' + file.inputFullPath + '" -c copy -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
+	mtdstr = ''
+	for tag, value in tagsTrans.iteritems():
+		mtdstr = mtdstr + ' -metadata ' + tag + '="' + value + '"'
+	ffstr = 'ffmpeg -i "' + file.inputFullPath + '" -c copy ' + mtdstr + ' -write_id3v1 1 -id3v2_version 3 -y "' + file.outputFullPath + '"'
 	return ffstr
 
 def process_single_file(args, file):
@@ -155,14 +158,23 @@ def process_single_file(args, file):
 		properNounsOrig = separate_properNouns(tagsOrig)
 		properNounsTrans = translate_tags(args, properNounsOrig)
 		tagsTrans = replace_properNouns(tagsTrans, properNounsOrig, properNounsTrans)
-	write_translated_id3file(file, tagsTrans)
-	ffstr = make_trans_id3str(file)
+	ffstr = make_trans_id3str(file, tagsTrans)
 	ffworked = go(ffstr)
 	if ffworked is not True:
 		print ffworked
 		return False
 	else:
+		cleanup(args, file, tagsTrans)
 		return True
+
+def cleanup(args, file, tagsTrans):
+	'''
+	handles printing/ deleting/ renaming things
+	'''
+	if args.p:
+		write_translated_id3file(file, tagsTrans)
+	else:
+		os.remove(file.id3OrigObj)
 
 def parse_input(args):
 	'''
@@ -193,6 +205,7 @@ def init_args():
 	parser.add_argument('-o', '--output', dest='o', default=None, help="the output folder path for the translated files")
 	parser.add_argument('-srce', '--source-language', dest='s', default=None, help="the source language (ISO 639-1), if unspecified id3translate will guess")
 	parser.add_argument('-dest', '--destination-language', dest='d', default='en', help="the destination language (ISO 639-1), default is English (en)")
+	parser.add_argument('-p', '--print', dest='p', action='store_true', default=False, help="print sidecar ;FFMETADATA1 text files, defualt is False")
 	parser.add_argument('--ignore-names', dest='names', action='store_true', default=False, help="don't translate words identified as proper nouns")
 	args = parser.parse_args()
 	return args

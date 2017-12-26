@@ -1,4 +1,0 @@
-;FFMETADATA1comment=converted by convert2mp3.net
-title=It's small, but capable
-artist=???
-encoder=Lavf57.46.100

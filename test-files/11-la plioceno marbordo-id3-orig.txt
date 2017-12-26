@@ -1,9 +1,0 @@
-;FFMETADATA1
-title=???????
-genre=Soundtrack
-track=11/20
-artist=????
-album=Nokto De La Galaksia Fervojo
-album_artist=Haruomi Hosono
-date=1985
-encoder=Lavf57.46.100
